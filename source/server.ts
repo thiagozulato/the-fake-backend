@@ -20,6 +20,7 @@ import { UIManager } from './ui';
 import { GraphQLManager } from './graphql';
 import { join } from 'path';
 import { FileStorage } from './storage';
+import { AdminRestManager } from './rest-manager/admin-rest-manager';
 
 export function createServer(options = {} as ServerOptions): Server {
   const {
@@ -38,6 +39,7 @@ export function createServer(options = {} as ServerOptions): Server {
   const overrideManager = new OverrideManager(routeManager, fileStorage);
   const proxyManager = new ProxyManager(routeManager, proxies, basePath);
   const throttlingManager = new ThrottlingManager(throttlings);
+  const adminRestManager = new AdminRestManager(routeManager, overrideManager);
   const uiManager = new UIManager(
     proxyManager,
     throttlingManager,
@@ -46,6 +48,8 @@ export function createServer(options = {} as ServerOptions): Server {
   );
 
   const expressServer: express.Application = express();
+
+  adminRestManager.build(expressServer);
 
   if (definitions) {
     const graphqlManager = new GraphQLManager(definitions);
