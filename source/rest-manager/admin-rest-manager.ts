@@ -8,10 +8,9 @@ import { readFixtureSync } from '../files';
 
 export function resolveAttributeContentRest(route: Route) {
   const routeMethod = {};
-  const data = resolveMethodAttribute(routeMethod.data, request);
-  const file = resolveMethodAttribute(routeMethod.file, request);
-  const content =
-    data || readFixtureSync(file, route.path, routeMethod.scenario);
+  const data = '';
+  const file = '';
+  const content = data || readFixtureSync(file, route.path, '');
 
   return content;
 }
