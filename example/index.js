@@ -8,6 +8,18 @@ server.routes([
     methods: [
       {
         type: 'get',
+        overrides: [
+          {
+            name: 'Example with data',
+            data: {
+              message: 'with-data-message',
+            },
+          },
+          {
+            name: 'Simple Example',
+            data: 12,
+          },
+        ],
       },
     ],
   },

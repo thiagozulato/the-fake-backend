@@ -137,6 +137,20 @@ export class OverrideManager {
     }, []);
   }
 
+  chooseRestClient(path: string, type: string, name: string): Override {
+    const overridableRoutes = this.getAll();
+    const route = findRouteByUrl(overridableRoutes, path);
+    const overrides = getMethodOverridesByType(route, type.toLowerCase());
+
+    overrides.forEach((override) => {
+      override.selected = override.name === name;
+    });
+
+    this.fileStorage?.setItem('overrides', this.getAllSelected());
+
+    return { routePath: path, methodType: type, name };
+  }
+
   /**
    * Prompt and select a route method override.
    */

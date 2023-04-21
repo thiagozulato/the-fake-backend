@@ -45,7 +45,11 @@ const expressServer = {
 jest.mock('express', () => {
   const fn = () => expressServer;
   fn.json = jest.fn();
-  fn.Router = jest.fn(() => ({ get: jest.fn() }));
+  fn.Router = jest.fn(() => ({
+    get: jest.fn(),
+    post: jest.fn(),
+    use: jest.fn(),
+  }));
   return fn;
 });
 

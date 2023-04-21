@@ -49,8 +49,6 @@ export function createServer(options = {} as ServerOptions): Server {
 
   const expressServer: express.Application = express();
 
-  adminRestManager.build(expressServer);
-
   if (definitions) {
     const graphqlManager = new GraphQLManager(definitions);
     graphqlManager.applyMiddlewareTo(expressServer);
@@ -58,6 +56,8 @@ export function createServer(options = {} as ServerOptions): Server {
 
   expressServer.use(middlewares || cors());
   expressServer.use(express.json());
+
+  adminRestManager.build(expressServer);
 
   expressServer.use(
     uiManager.createDrawRequestMiddleware(),

@@ -58,26 +58,6 @@ export function resolveMethodAttribute(
   return typeof attribute === 'function' ? attribute(req) : attribute;
 }
 
-export function resolveAttributeContent(
-  options: ServerOptions,
-  route: Route,
-  routeMethod: Method,
-  request: Request
-) {
-  const data = resolveMethodAttribute(routeMethod.data, request);
-  const file = resolveMethodAttribute(routeMethod.file, request);
-  const normalizedReqPath = normalizeReqPath(options, request);
-  const content =
-    data ||
-    readFixtureSync(
-      file || normalizedReqPath,
-      route.path,
-      routeMethod.scenario
-    );
-
-  return content;
-}
-
 function cloneOverrides(overrides: MethodOverride[]) {
   return overrides.map((override) => ({
     ...override,
@@ -140,18 +120,6 @@ export class RouteManager {
    */
   findRouteByPath(path: string) {
     return findRouteByUrl(this.routes, path);
-  }
-
-  /**
-   * Find a route by path and method.
-   *
-   * @param path Route path
-   * @param method Route method
-   */
-  private findRouteMethod(path: string, method: string) {
-    const route = this.findRouteByPath(path);
-
-    return findRouteMethodByType(route.methods, method);
   }
 
   /**
@@ -234,7 +202,16 @@ export class RouteManager {
   createRouteMethodResponseMiddleware(options: ServerOptions): Middleware {
     return (req, res, next) => {
       const { route, routeMethod } = res.locals;
-      const content = resolveAttributeContent(options, route, routeMethod, req);
+      const data = resolveMethodAttribute(routeMethod.data, req);
+      const file = resolveMethodAttribute(routeMethod.file, req);
+      const normalizedReqPath = normalizeReqPath(options, req);
+      const content =
+        data ||
+        readFixtureSync(
+          file || normalizedReqPath,
+          route.path,
+          routeMethod.scenario
+        );
 
       res.locals.response = content;
 

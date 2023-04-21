@@ -1,48 +1,15 @@
 import express, { Application, Router } from 'express';
-import { RouteManager, findRouteMethodByType } from '../routes';
+import bodyParser from 'body-parser';
+import { RouteManager } from '../routes';
 import { OverrideManager } from '../overrides';
-import { Method, Request, Response, Route } from '../interfaces';
-import { over, prop, propEq } from 'ramda';
-import { ResponseError } from './response-error';
-import { readFixtureSync } from '../files';
-
-function findSelectedMethodOverride(method: Method, overrideName: string) {
-  return method.overrides?.find(propEq('name', overrideName));
-}
-
-function getDataAndFile(method: Method, overrideName: string) {
-  if (overrideName) {
-    const overrideMethod = findSelectedMethodOverride(method, overrideName);
-
-    return {
-      data: overrideMethod?.data,
-      file: overrideMethod?.file as string,
-      scenario: overrideMethod?.scenario,
-    };
-  }
-
-  return {
-    data: method.data,
-    file: method.file as string,
-    scenario: method.scenario,
-  };
-}
-
-function resolveAttributeContentRest(
-  route: Route,
-  type: string,
-  overrideName: string
-) {
-  const { path, methods } = route;
-  console.log('RESOLVE ', path);
-  const routeMethod = findRouteMethodByType(methods, type);
-  const { data, file, scenario } = getDataAndFile(routeMethod, overrideName);
-  console.log('CONTENT ', data, file, scenario, JSON.stringify(routeMethod));
-
-  const content = data || readFixtureSync(file || path, path, scenario);
-
-  return content;
-}
+import { Request, Response } from '../interfaces';
+import { ResponseError } from './error/response-error';
+import {
+  FilterMockResponseQuery,
+  FilterRouteQuery,
+  UseRouteOverride,
+} from './types';
+import { getPathMockContent } from './utils';
 
 export class AdminRestManager {
   private router: Router;
@@ -57,14 +24,10 @@ export class AdminRestManager {
   private getAllRoutes() {
     return (request: Request, response: Response) => {
       try {
-        const { path } = request.query;
-        const routes = path
-          ? this.getRouteByPath(path as string)
-          : this.getAllPaths();
+        const { path } = request.query as FilterRouteQuery;
+        const routes = path ? this.getRouteByPath(path) : this.getAllPaths();
 
-        if (routes.length) {
-          return response.send(routes);
-        }
+        return response.send(routes);
       } catch (error) {
         const { message } = error as Error;
         return response.status(400).send(new ResponseError(message));
@@ -75,15 +38,38 @@ export class AdminRestManager {
   private getPathMockResponse() {
     return (request: Request, response: Response) => {
       try {
-        const { path, type, overrideName } = request.query;
-        console.log(path, type, overrideName);
-        const content = resolveAttributeContentRest(
-          this.routeManager.findRouteByPath(path as string),
-          type as string,
-          overrideName as string
+        const {
+          path,
+          type,
+          overrideName,
+        } = request.query as FilterMockResponseQuery;
+
+        const content = getPathMockContent(
+          this.routeManager.findRouteByPath(path),
+          type,
+          overrideName
         );
 
         return response.send(content);
+      } catch (error) {
+        const { message } = error as Error;
+        return response.status(400).send(new ResponseError(message));
+      }
+    };
+  }
+
+  private usePathOverride() {
+    return (request: Request, response: Response) => {
+      try {
+        const { path, type, name } = request.body as UseRouteOverride;
+
+        const overrideResponse = this.overrideManager.chooseRestClient(
+          path,
+          type,
+          name
+        );
+
+        return response.send(overrideResponse);
       } catch (error) {
         const { message } = error as Error;
         return response.status(400).send(new ResponseError(message));
@@ -100,11 +86,13 @@ export class AdminRestManager {
   }
 
   private settingRoutes() {
-    this.router.get('/paths', this.getAllRoutes());
-    this.router.get('/path-content', this.getPathMockResponse());
+    this.router.get('/routes', this.getAllRoutes());
+    this.router.post('/routes/use-override', this.usePathOverride());
+    this.router.get('/routes/content', this.getPathMockResponse());
   }
 
   build(app: Application) {
+    this.router.use(bodyParser.json());
     this.settingRoutes();
     app.use('/admin', this.router);
   }
