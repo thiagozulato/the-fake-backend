@@ -59,6 +59,23 @@ export class ThrottlingManager {
   }
 
   /**
+   * Select the throttling and set it as current.
+   * @param name The throttling name
+   */
+  toggleByName(name: string) {
+    const current = this.throttlings.findIndex(
+      (throttling) => throttling.name === name
+    );
+
+    if (current < 0) {
+      this.currentThrottlingIndex = null;
+      return;
+    }
+
+    this.currentThrottlingIndex = current;
+  }
+
+  /**
    * Toggle current throttling moving to the next position on list.
    */
   toggleCurrent() {

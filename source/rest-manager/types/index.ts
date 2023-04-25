@@ -13,3 +13,7 @@ export type UseRouteOverride = {
   type: string;
   name: string;
 };
+
+export type UseThrottlingRequest = {
+  name: string;
+};

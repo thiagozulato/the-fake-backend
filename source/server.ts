@@ -42,7 +42,8 @@ export function createServer(options = {} as ServerOptions): Server {
   const adminRestManager = new AdminRestManager(
     options,
     routeManager,
-    overrideManager
+    overrideManager,
+    throttlingManager
   );
   const uiManager = new UIManager(
     proxyManager,

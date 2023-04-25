@@ -5,6 +5,7 @@ import { OverrideManager } from '../overrides';
 import { RouteProperties, ServerOptions } from '../interfaces';
 import { MethodType } from '../enums';
 import { AdminRestManager } from './admin-rest-manager';
+import { ThrottlingManager } from '../throttling';
 
 const app = express();
 
@@ -30,7 +31,12 @@ const routes: RouteProperties[] = [
 ];
 
 const serverOptions: ServerOptions = {
-  throttlings: [],
+  throttlings: [
+    { name: 'Fast', values: [0, 500] },
+    { name: 'Medium', values: [500, 1500] },
+    { name: 'Slow', values: [1500, 3000] },
+    { name: 'Slowest', values: [3000, 6000] },
+  ],
   proxies: [
     {
       name: 'sandbox',
@@ -46,10 +52,12 @@ const serverOptions: ServerOptions = {
 describe('source/rest-manager/admin-rest-manager.ts', () => {
   const routeManager = new RouteManager();
   const overrideManager = new OverrideManager(routeManager);
+  const throttlingManager = new ThrottlingManager(serverOptions.throttlings);
   const adminRestManager = new AdminRestManager(
     serverOptions,
     routeManager,
-    overrideManager
+    overrideManager,
+    throttlingManager
   );
 
   adminRestManager.build(app);
@@ -216,6 +224,34 @@ describe('source/rest-manager/admin-rest-manager.ts', () => {
 
       expect(statusCode).toBe(200);
       expect(body).toEqual(serverOptions);
+    });
+  });
+
+  describe('POST /admin/routes/use-throttling', () => {
+    const USE_THROTTLING_ROUTE = '/admin/routes/use-throttling';
+
+    it('should select the throttling for all endpoints', async () => {
+      const { statusCode } = await request(app)
+        .post(USE_THROTTLING_ROUTE)
+        .send({
+          name: 'Slow',
+        });
+
+      expect(statusCode).toBe(204);
+      expect(throttlingManager.getCurrent()).toEqual(
+        serverOptions.throttlings[2]
+      );
+    });
+
+    it('should turn off throttling if the option doesnt exist', async () => {
+      const { statusCode } = await request(app)
+        .post(USE_THROTTLING_ROUTE)
+        .send({
+          name: '',
+        });
+
+      expect(statusCode).toBe(204);
+      expect(throttlingManager.getCurrent()).toBeNull();
     });
   });
 });

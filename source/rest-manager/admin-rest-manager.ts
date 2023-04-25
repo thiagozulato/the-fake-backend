@@ -8,8 +8,10 @@ import {
   FilterMockResponseQuery,
   FilterRouteQuery,
   UseRouteOverride,
+  UseThrottlingRequest,
 } from './types';
 import { getPathMockContent } from './utils';
+import { ThrottlingManager } from '../throttling';
 
 export class AdminRestManager {
   private router: Router;
@@ -17,7 +19,8 @@ export class AdminRestManager {
   constructor(
     private settings: ServerOptions,
     private routeManager: RouteManager,
-    private overrideManager: OverrideManager
+    private overrideManager: OverrideManager,
+    private throttlingManager: ThrottlingManager
   ) {
     this.router = express.Router();
   }
@@ -78,6 +81,15 @@ export class AdminRestManager {
     };
   }
 
+  private useThrottling() {
+    return (request: Request, response: Response) => {
+      const { name } = request.body as UseThrottlingRequest;
+      this.throttlingManager.toggleByName(name);
+
+      return response.sendStatus(204);
+    };
+  }
+
   private getServerOptions() {
     return (_request: Request, response: Response) => {
       return response.send(this.settings);
@@ -96,6 +108,7 @@ export class AdminRestManager {
     this.router.get('/config', this.getServerOptions());
     this.router.get('/routes', this.getAllRoutes());
     this.router.post('/routes/use-override', this.usePathOverride());
+    this.router.post('/routes/use-throttling', this.useThrottling());
     this.router.get('/routes/content', this.getPathMockResponse());
   }
 

@@ -137,6 +137,13 @@ export class OverrideManager {
     }, []);
   }
 
+  /**
+   * Select a route method override when using REST API
+   * @param path The route path
+   * @param type The route method type (GET, PUT, POST, DELETE)
+   * @param name The override name for custom response
+   * @returns The selected route
+   */
   chooseRestClient(path: string, type: string, name: string): Override {
     const overridableRoutes = this.getAll();
     const route = findRouteByUrl(overridableRoutes, path);
