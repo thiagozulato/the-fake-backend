@@ -60,10 +60,10 @@ describe('source/rest-manager/admin-rest-manager.ts', () => {
 
   describe('GET /admin/routes', () => {
     it('get all routes', async () => {
-      const response = await request(app).get('/admin/routes');
+      const { statusCode, body } = await request(app).get('/admin/routes');
 
-      expect(response.statusCode).toBe(200);
-      expect(response.body).toEqual([
+      expect(statusCode).toBe(200);
+      expect(body).toEqual([
         {
           methods: [
             {
@@ -89,11 +89,13 @@ describe('source/rest-manager/admin-rest-manager.ts', () => {
     });
 
     it('get route by path', async () => {
-      const response = await request(app).get('/admin/routes?path=/dogs');
+      const { statusCode, body } = await request(app).get(
+        '/admin/routes?path=/dogs'
+      );
 
-      expect(response.statusCode).toBe(200);
-      expect(response.body).toHaveLength(1);
-      expect(response.body).toEqual([
+      expect(statusCode).toBe(200);
+      expect(body).toHaveLength(1);
+      expect(body).toEqual([
         {
           methods: [{ type: 'get' }],
           path: '/dogs',
@@ -102,10 +104,12 @@ describe('source/rest-manager/admin-rest-manager.ts', () => {
     });
 
     it('returns response error when the route is not found', async () => {
-      const response = await request(app).get('/admin/routes?path=/dogs-teste');
+      const { statusCode, body } = await request(app).get(
+        '/admin/routes?path=/dogs-teste'
+      );
 
-      expect(response.statusCode).toBe(400);
-      expect(response.body).toEqual({
+      expect(statusCode).toBe(400);
+      expect(body).toEqual({
         message: expect.any(String),
       });
     });
@@ -113,21 +117,21 @@ describe('source/rest-manager/admin-rest-manager.ts', () => {
 
   describe('GET /admin/routes/content', () => {
     it('returns path content without override', async () => {
-      const response = await request(app).get(
+      const { statusCode, body } = await request(app).get(
         '/admin/routes/content?path=/users&type=get'
       );
 
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual(routes[0].methods[0].data);
+      expect(statusCode).toBe(200);
+      expect(body).toEqual(routes[0].methods[0].data);
     });
 
     it('returns path content with override', async () => {
-      const response = await request(app).get(
+      const { statusCode, body } = await request(app).get(
         '/admin/routes/content?path=/users&type=get&overrideName=Inactive User'
       );
 
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual({
+      expect(statusCode).toBe(200);
+      expect(body).toEqual({
         active: false,
       });
     });
@@ -149,23 +153,24 @@ describe('source/rest-manager/admin-rest-manager.ts', () => {
           path: '/users',
         },
       ]);
-      const response = await request(app).get(
+
+      const { statusCode, body } = await request(app).get(
         '/admin/routes/content?path=/users&type=get&overrideName=Inactive User'
       );
 
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual({
+      expect(statusCode).toBe(200);
+      expect(body).toEqual({
         message: expect.any(String),
       });
     });
 
     it('returns response error when the route is not found', async () => {
-      const response = await request(app).get(
+      const { statusCode, body } = await request(app).get(
         '/admin/routes/content?path=/invalid-path&type=get&overrideName=Inactive User'
       );
 
-      expect(response.statusCode).toBe(400);
-      expect(response.body).toEqual({
+      expect(statusCode).toBe(400);
+      expect(body).toEqual({
         message: expect.any(String),
       });
     });
@@ -181,12 +186,12 @@ describe('source/rest-manager/admin-rest-manager.ts', () => {
         name: 'Inactive User',
       };
 
-      const response = await request(app)
+      const { statusCode, body } = await request(app)
         .post(USE_OVERRIDE_ROUTE)
         .send(overrideData);
 
-      expect(response.statusCode).toBe(200);
-      expect(response.body).toEqual({
+      expect(statusCode).toBe(200);
+      expect(body).toEqual({
         name: 'Inactive User',
         routePath: '/users',
         methodType: 'get',
@@ -194,12 +199,12 @@ describe('source/rest-manager/admin-rest-manager.ts', () => {
     });
 
     it('returns response error when the route is invalid', async () => {
-      const response = await request(app)
+      const { statusCode, body } = await request(app)
         .post(USE_OVERRIDE_ROUTE)
         .send({ path: '/invalid-path' });
 
-      expect(response.statusCode).toBe(400);
-      expect(response.body).toEqual({
+      expect(statusCode).toBe(400);
+      expect(body).toEqual({
         message: expect.any(String),
       });
     });
@@ -210,7 +215,7 @@ describe('source/rest-manager/admin-rest-manager.ts', () => {
       const { statusCode, body } = await request(app).get('/admin/config');
 
       expect(statusCode).toBe(200);
-      expect(body).toEqual(body);
+      expect(body).toEqual(serverOptions);
     });
   });
 });
