@@ -2,7 +2,7 @@ import express from 'express';
 import request from 'supertest';
 import { RouteManager } from '../routes';
 import { OverrideManager } from '../overrides';
-import { RouteProperties } from '../interfaces';
+import { RouteProperties, ServerOptions } from '../interfaces';
 import { MethodType } from '../enums';
 import { AdminRestManager } from './admin-rest-manager';
 
@@ -29,10 +29,28 @@ const routes: RouteProperties[] = [
   { path: '/dogs', methods: [{ type: MethodType.GET }] },
 ];
 
+const serverOptions: ServerOptions = {
+  throttlings: [],
+  proxies: [
+    {
+      name: 'sandbox',
+      host: 'https://sandbox.com',
+    },
+    {
+      name: 'production',
+      host: 'https://production.com',
+    },
+  ],
+};
+
 describe('source/rest-manager/admin-rest-manager.ts', () => {
   const routeManager = new RouteManager();
   const overrideManager = new OverrideManager(routeManager);
-  const adminRestManager = new AdminRestManager(routeManager, overrideManager);
+  const adminRestManager = new AdminRestManager(
+    serverOptions,
+    routeManager,
+    overrideManager
+  );
 
   adminRestManager.build(app);
 
@@ -184,6 +202,15 @@ describe('source/rest-manager/admin-rest-manager.ts', () => {
       expect(response.body).toEqual({
         message: expect.any(String),
       });
+    });
+  });
+
+  describe('GET /admin/config', () => {
+    it('returns the ServerOptions config', async () => {
+      const { statusCode, body } = await request(app).get('/admin/config');
+
+      expect(statusCode).toBe(200);
+      expect(body).toEqual(body);
     });
   });
 });

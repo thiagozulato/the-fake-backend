@@ -2,7 +2,7 @@ import express, { Application, Router } from 'express';
 import bodyParser from 'body-parser';
 import { RouteManager } from '../routes';
 import { OverrideManager } from '../overrides';
-import { Request, Response } from '../interfaces';
+import { Request, Response, ServerOptions } from '../interfaces';
 import { ResponseError } from './error/response-error';
 import {
   FilterMockResponseQuery,
@@ -15,6 +15,7 @@ export class AdminRestManager {
   private router: Router;
 
   constructor(
+    private settings: ServerOptions,
     private routeManager: RouteManager,
     private overrideManager: OverrideManager
   ) {
@@ -77,6 +78,12 @@ export class AdminRestManager {
     };
   }
 
+  private getServerOptions() {
+    return (_request: Request, response: Response) => {
+      return response.send(this.settings);
+    };
+  }
+
   private getAllPaths() {
     return this.routeManager.getAll().filter((route) => Boolean(route.path));
   }
@@ -86,6 +93,7 @@ export class AdminRestManager {
   }
 
   private settingRoutes() {
+    this.router.get('/config', this.getServerOptions());
     this.router.get('/routes', this.getAllRoutes());
     this.router.post('/routes/use-override', this.usePathOverride());
     this.router.get('/routes/content', this.getPathMockResponse());
